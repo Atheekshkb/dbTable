@@ -4,12 +4,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Optional;
 
 @Controller // This means that this class is a Controller
@@ -31,7 +31,7 @@ public class MainController {
     public String saveUser(@ModelAttribute("user") User user){
         System.out.println("------------ In saveUser  " + user.toString());
         userRepository.save(user);
-        return "redirect:/demo/page/1";
+        return "redirect:/demo/index";
 
     }
 
@@ -70,29 +70,27 @@ public class MainController {
     }
 
     @GetMapping("/index")
-    public  String homePage(){
-        return "redirect:/demo/page/1";
+    public  String homePage(Model model){
+        return findPaginated(1, model, "name","asc");
     }
     @GetMapping("/page/{pageNo}")
-    public String findPaginated(@PathVariable(value = "pageNo") int pageNo, Model model ) {
+    public String findPaginated(@PathVariable(value = "pageNo") int pageNo, Model model, @RequestParam("sortField") String sortField, @RequestParam("sortDir") String sortDir) {
         int pageSize = 3;
-        Pageable pageable = PageRequest.of(pageNo - 1, pageSize);
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortField).ascending() :
+                Sort.by(sortField).descending();
+
+        Pageable pageable = PageRequest.of(pageNo - 1, pageSize,sort);
         Page<User> page = userRepository.findAll(pageable);
         List<User> listUsers = page.getContent();
         System.out.println("In /Page/PageNo controller <findPaginated>");
-        ListIterator lstItr = listUsers.listIterator();
-        while(lstItr.hasNext()) {
-            User usr = (User) lstItr.next();
-            System.out.println("Id: " + usr.getId());
-            System.out.println("Name: " + usr.getName());
-            System.out.println("Email: "+ usr.getEmail());
-            System.out.println("================================");
-        }
-        long totalItems = page.getTotalElements();
-        long totalPages = page.getTotalPages();
         model.addAttribute("currentPage", pageNo);
         model.addAttribute("totalPages", page.getTotalPages());
         model.addAttribute("totalItems", page.getTotalElements());
+
+        model.addAttribute("sortField", sortField);
+        model.addAttribute("sortDir", sortDir);
+        model.addAttribute("reverseSortDir", sortDir.equals("asc") ? "desc" : "asc");
+
         model.addAttribute("allUsers",  listUsers);
         return "index";
     }
