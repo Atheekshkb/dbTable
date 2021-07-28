@@ -10,6 +10,7 @@ public class AccessingDataMysqlApplication implements CommandLineRunner {
 
     @Autowired
     UserRepository userRepo;
+
     public static void main(String[] args) {
         SpringApplication.run(AccessingDataMysqlApplication.class, args);
     }
